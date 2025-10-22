@@ -1,0 +1,5 @@
+selectolax
+Django
+djangorestframework
+celery
+dotenv

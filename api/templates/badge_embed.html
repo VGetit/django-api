@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+{% load star_tag %}
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .badge-container {
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 220px;
+      background: #fff;
+    }
+    .stars {
+      font-size: 18px;
+      color: #f5a623;
+    }
+    .score {
+      font-size: 14px;
+      color: #333;
+    }
+    .link {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .link a {
+      text-decoration: none;
+      color: #1e87f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge-container">
+    <div class="stars">
+
+{% for _ in company.score|times %}
+  ★
+{% endfor %}
+{% for _ in 5|subtract:company.score|times %}
+  ☆
+{% endfor %}
+    </div>
+    <div class="score">{{ company.score }}/5 · {{ company.review_count }} değerlendirme</div>
+    <div class="link">
+      <a href="https://yourdomain.com/company/{{ company.id }}">Şirket sayfası →</a>
+    </div>
+  </div>
+</body>
+</html>
