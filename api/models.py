@@ -13,7 +13,7 @@ class Company(models.Model):
     name = models.CharField(max_length=255, blank=False)
     about = models.CharField(blank=True)
     address = models.OneToOneField(Address, on_delete=models.CASCADE, blank=True, null=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.CharField(max_length=100, unique=True, blank=True)
     url = models.CharField(max_length=100, unique=True)
     is_processed = models.BooleanField(default=False)
     social_urls = models.TextField()
@@ -35,13 +35,13 @@ class Company(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug and self.url:
-            base_slug = slugify(self.url)
-            slug = base_slug
-            i = 1
-            while Company.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{i}"
-                i += 1
-            self.slug = slug
+            #base_slug = slugify(self.url)
+            #slug = base_slug
+            #i = 1
+            #while Company.objects.filter(slug=slug).exists():
+            #    slug = f"{base_slug}-{i}"
+            #    i += 1
+            self.slug = self.url
         super().save(*args, **kwargs)
         self.verify_phone_numbers()
 

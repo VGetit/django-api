@@ -53,6 +53,7 @@ class CompanySerializer(serializers.ModelSerializer):
     address = AddressSerializer(read_only=True)
     contacts = ContactsSerializer(many=True, read_only=True)
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Company

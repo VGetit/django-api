@@ -1,9 +1,15 @@
 import requests
-from selectolax.parser import HTMLParser
+from selectolax.parser import HTMLParser, Node
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 }
+
+def safe_get_text(node: Node, seperator=''):
+    return node.text(strip=True, separator=seperator) if node else ''
+
+def safe_get_html(node: Node):
+    return node.html if node else ''
 
 def run_search_scraper_light(query: str):
     url = f"https://builtwith.com/meta/{query}"
@@ -11,37 +17,37 @@ def run_search_scraper_light(query: str):
     response.encoding = 'utf-8'
     html = HTMLParser(response.text)
 
-    company_name = company_address = company_phone_numbers = listed_contacts = ''
+    company_name = company_address = ''
     people_verified = False
     social_urls = []
     table_data = []
+    company_phone_numbers = []
 
-    card_bodies = html.css('div.card-body')
+    card_bodies = html.css('div.card')
     for block in card_bodies:
-        title_node = block.css_first('h6')
+        title_node = block.css_first('.card-header')
+        body_node = block.css_first('.card-body')
         if not title_node:
             continue
 
         title = title_node.text(strip=True)
 
-        # Contact Information
-        if title == 'Contact Information':
-            dls = block.css('dl.row')
-            if len(dls) >= 2:
-                try:
-                    company_name = dls[0].css_first('dd').html.split('<br>')[0]
-                    company_name = HTMLParser(company_name).text(strip=True)
-                    company_address = dls[1].css_first('address').text(separator=' ', strip=True)
-                    phone_dds = dls[1].css('dd')
-                    if len(phone_dds) > 1:
-                        company_phone_numbers = [HTMLParser(num).text().replace('\n', '').replace('-', '') for num in phone_dds[1].html.split('<br>')]
-                except Exception as e:
-                    print("Error parsing contact block:", e)
+        if title == "Company Name":
+            company_name = safe_get_text(body_node.css_first('p'))
 
-        # Verified People
-        elif title == 'Verified People':
+        if title == "Location":
+            company_address = safe_get_text(body_node.css_first('address'), seperator=' ')
+
+        if title == "Telephones":
+            for tel in body_node.css('div.row'):
+                num = tel.css_first('div:nth-child(1)')
+                info = tel.css_first('div:nth-child(2)')
+                phone = f'{safe_get_text(num)}, {safe_get_text(info)}'
+                company_phone_numbers.append(phone)
+
+        elif title == 'Publicly Listed Contacts':
             people_verified = True
-            table = card_bodies[0].css_first('table')
+            table = body_node.css_first('table')
             if table:
                 rows = table.css("table tbody tr")
 
@@ -72,7 +78,6 @@ def run_search_scraper_light(query: str):
 
                     table_data.append(entry)
 
-        # Social Links
         elif title == 'Social Links':
             links = block.css('li a[href]')
             for link in links:

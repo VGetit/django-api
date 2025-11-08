@@ -6,7 +6,11 @@ from scraper.builtwith_scraper import run_search_scraper_light
 @shared_task
 def scrape_company_task(url):
     result = run_search_scraper_light(url)
+    print(result)
     try:
+        if (result.get('name') == ''):
+            print('no info!')
+            return
         addr = Address.objects.create(address=result.get('address', ''), verified=False)
         print(addr)
         company, created = Company.objects.get_or_create(url=url, defaults={

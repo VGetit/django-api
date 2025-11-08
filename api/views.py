@@ -1,8 +1,9 @@
 from django.contrib.auth.models import Group, User
-from rest_framework import permissions, viewsets, generics
+from rest_framework import permissions, viewsets, generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets
+from scraper.builtwith_scraper import run_search_scraper_light
 from .models import Company, Comment
 from .serializers import CompanySerializer
 from api.serializers import GroupSerializer, UserSerializer, CommentSerializer
@@ -42,34 +43,73 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='search')
     def search_company(self, request):
-        url = request.query_params.get('url')
-        print(url)
+        url = request.query_params.get('url', '').strip()
+        
         if not url:
-            return Response({'error': 'URL is required'}, status=400)
+            return Response(
+                {'status': 'error', 'message': 'URL is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 
         try:
+            # Try to find existing company
             company = Company.objects.get(url=url)
 
             if company.is_processed:
                 serializer = self.get_serializer(company)
-                return Response({'status': 'exists', 'company': serializer.data})
+                return Response({
+                    'status': 'success',
+                    'company': serializer.data
+                })
             else:
+                # Company exists but still processing
                 return Response({
                     'status': 'processing',
-                    'message': 'Scraping is already in progress.',
-                    'slug': company.slug
-                }, status=202)
+                    'message': 'Company information is being gathered. Please check back later.',
+                    'company': {
+                        'slug': company.slug,
+                        'url': company.url,
+                        'name': company.name or 'Processing...'
+                    }
+                }, status=status.HTTP_202_ACCEPTED)
 
         except Company.DoesNotExist:
-            company = Company.objects.create(url=url, is_processed=False)
+            # Do a quick check if the URL is valid and contains company info
+            try:
+                quick_check = run_search_scraper_light(url)
+                if not quick_check.get('name'):
+                    return Response({
+                        'status': 'error',
+                        'message': 'No company information found at this URL.'
+                    }, status=status.HTTP_404_NOT_FOUND)
+                
+                # Create new company entry
+                company = Company.objects.create(
+                    url=url,
+                    name=quick_check.get('name', 'Processing...'),
+                    is_processed=False
+                )
 
-            scrape_company_task.delay(url)
+                # Start scraping task
+                scrape_company_task.delay(url)
 
-            return Response({
-                'status': 'processing',
-                'message': 'Scraping started.',
-                'slug': company.slug
-            }, status=202)
+                return Response({
+                    'status': 'processing',
+                    'message': 'Company found! Gathering detailed information...',
+                    'company': {
+                        'slug': company.slug,
+                        'url': company.url,
+                        'name': company.name
+                    }
+                }, status=status.HTTP_202_ACCEPTED)
+
+            except Exception as e:
+                return Response({
+                    'status': 'error',
+                    'message': 'Unable to access or validate the URL. Please check the URL and try again.'
+                }, status=status.HTTP_400_BAD_REQUEST)
         
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()

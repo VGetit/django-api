@@ -1,5 +1,12 @@
 selectolax
 Django
 djangorestframework
+django-cors-headers
+djangorestframework-simplejwt
+psycopg2
 celery
 dotenv
+phonenumbers
+drf-nested-routers
+requests
+redis
