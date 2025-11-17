@@ -2,6 +2,9 @@ from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Avg
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 import phonenumbers
 
 class Address(models.Model):
@@ -17,7 +20,7 @@ class Company(models.Model):
     url = models.CharField(max_length=100, unique=True)
     is_processed = models.BooleanField(default=False)
     social_urls = models.TextField()
-    score = models.SmallIntegerField(default=0)
+    score = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -32,6 +35,24 @@ class Company(models.Model):
                     number.verified = False
             except phonenumbers.NumberParseException:
                 number.verified = False
+    
+    def calculate_and_save_score(self):
+        verification_score = 0
+        
+        if self.address and self.address.verified:
+            verification_score += 1.0
+            
+        if self.phone_numbers.filter(verified=True).exists():
+            verification_score += 1.0
+
+        if self.contacts.filter(verified_profile=True).exists():
+            verification_score += 1.0
+            
+    
+        avg_rating = self.comments.aggregate(Avg('rating'))['rating__avg'] or 0
+        final_score = verification_score + (float(avg_rating) * 0.4)
+        self.score = round(min(final_score, 5.0), 1)
+        self.save(update_fields=['score'])
 
     def save(self, *args, **kwargs):
         if not self.slug and self.url:
@@ -76,3 +97,20 @@ class Contacts(models.Model):
     level = models.CharField(max_length=100)
     google_link = models.CharField(max_length=255)
     linkedin_link = models.CharField(max_length=255)
+
+@receiver(post_save, sender=Address)
+def update_score_on_address_change(sender, instance, **kwargs):
+    if hasattr(instance, 'company'):
+        instance.company.calculate_and_save_score()
+
+@receiver(post_save, sender=PhoneNumber)
+@receiver(post_delete, sender=PhoneNumber)
+def update_score_on_phone_change(sender, instance, **kwargs):
+    if instance.company:
+        instance.company.calculate_and_save_score()
+
+@receiver(post_save, sender=Comment)
+@receiver(post_delete, sender=Comment)
+def update_score_on_comment_change(sender, instance, **kwargs):
+    if instance.company:
+        instance.company.calculate_and_save_score()

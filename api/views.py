@@ -51,8 +51,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
-
         try:
             # Try to find existing company
             company = Company.objects.get(url=url)

@@ -54,6 +54,7 @@ class CompanySerializer(serializers.ModelSerializer):
     contacts = ContactsSerializer(many=True, read_only=True)
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    verifications = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -67,6 +68,20 @@ class CompanySerializer(serializers.ModelSerializer):
             'contacts',
             'phone_numbers',
             'social_urls',
-            'comments'
+            'comments',
+            'verifications'
         ]
         read_only_fields = ['slug', 'is_processed']
+
+    def get_verifications(self, obj):
+        is_address_verified = False
+        if obj.address:
+            is_address_verified = obj.address.verified
+        is_phone_verified = obj.phone_numbers.filter(verified=True).exists()
+        is_employees_verified = obj.contacts.filter(verified_profile=True).exists()
+
+        return {
+            "phone": is_phone_verified,
+            "address": is_address_verified,
+            "employees": is_employees_verified
+        }

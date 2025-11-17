@@ -40,10 +40,9 @@ def run_search_scraper_light(query: str):
 
         if title == "Telephones":
             for tel in body_node.css('div.row'):
-                num = tel.css_first('div:nth-child(1)')
-                info = tel.css_first('div:nth-child(2)')
-                phone = f'{safe_get_text(num)}, {safe_get_text(info)}'
-                company_phone_numbers.append(phone)
+                num = tel.css_first('div.col-lg-7')
+                info = tel.css_first('div.col-lg-5')
+                company_phone_numbers.append({'phone': safe_get_text(num), 'info': safe_get_text(info)})
 
         elif title == 'Publicly Listed Contacts':
             people_verified = True
