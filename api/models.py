@@ -5,6 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Avg
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from api.utils import custom_slugify
 import phonenumbers
 
 class Address(models.Model):
@@ -16,7 +17,7 @@ class Company(models.Model):
     name = models.CharField(max_length=255, blank=False)
     about = models.CharField(blank=True)
     address = models.OneToOneField(Address, on_delete=models.CASCADE, blank=True, null=True)
-    slug = models.CharField(max_length=100, unique=True, blank=True)
+    slug = models.SlugField(max_length=100, unique=True, db_index=True)
     url = models.CharField(max_length=100, unique=True)
     is_processed = models.BooleanField(default=False)
     social_urls = models.TextField()
@@ -56,15 +57,13 @@ class Company(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug and self.url:
-            #base_slug = slugify(self.url)
-            #slug = base_slug
-            #i = 1
-            #while Company.objects.filter(slug=slug).exists():
-            #    slug = f"{base_slug}-{i}"
-            #    i += 1
-            self.slug = self.url
+            self.slug = custom_slugify(self.url)
+            original_slug = self.slug
+            i = 1
+            while Company.objects.filter(slug=self.slug).exclude(id=self.id).exists():
+                self.slug = f"{original_slug}-{i}"
+                i += 1
         super().save(*args, **kwargs)
-        self.verify_phone_numbers()
 
     def __str__(self):
         return self.name

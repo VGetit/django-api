@@ -61,6 +61,7 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = [
             'name',
             'slug',
+            'about',
             'is_processed',
             'url',
             'score',

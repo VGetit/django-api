@@ -41,6 +41,39 @@ class CompanyViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     lookup_field = 'slug'
 
+    @action(detail=False, methods=['get'], url_path='get')
+    def get_company(self, request):
+        try:
+            slug = request.query_params.get('slug', '').strip()
+            print("Fetching company with slug:", slug)
+            company = Company.objects.get(slug=slug)
+            if company.is_processed:
+                serializer = self.get_serializer(company)
+                return Response({
+                    'status': 'success',
+                    'message': 'Company information retrieved successfully.',
+                    'company': serializer.data
+                })
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': 'Company information is still being processed. Please check back later.',
+                    'company': None
+                })
+
+        except Company.DoesNotExist:
+            return Response({
+                    'status': 'error',
+                    'message': 'Company not found.',
+                    'company': None
+                })
+
+    @action(detail=False, methods=['get'], url_path='recent')
+    def recent_companies(self, request):
+        recent_companies = Company.objects.filter(is_processed=True).order_by('-last_updated')[:3]
+        serializer = self.get_serializer(recent_companies, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], url_path='search')
     def search_company(self, request):
         url = request.query_params.get('url', '').strip()
