@@ -98,6 +98,35 @@ class Contacts(models.Model):
     google_link = models.CharField(max_length=255)
     linkedin_link = models.CharField(max_length=255)
 
+class TaskQueue(models.Model):
+    """
+    Model to track scraping tasks in a queue.
+    Implements rate limiting between task executions.
+    """
+    url = models.CharField(max_length=255, unique=True, db_index=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed'),
+        ],
+        default='pending'
+    )
+    last_executed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    retry_count = models.IntegerField(default=0)
+    error_message = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.url} - {self.status}"
+
+
 @receiver(post_save, sender=Address)
 def update_score_on_address_change(sender, instance, **kwargs):
     if hasattr(instance, 'company'):

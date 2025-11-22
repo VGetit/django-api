@@ -3,11 +3,10 @@ from rest_framework import permissions, viewsets, generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets
-from scraper.builtwith_scraper import run_search_scraper_light
 from .models import Company, Comment
 from .serializers import CompanySerializer
 from api.serializers import GroupSerializer, UserSerializer, CommentSerializer
-from scraper.tasks import scrape_company_task
+from api.tasks import queue_scrape_company
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 
@@ -107,28 +106,20 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_202_ACCEPTED)
 
         except Company.DoesNotExist:
-            # Do a quick check if the URL is valid and contains company info
+            # Create new company entry with placeholder data
             try:
-                quick_check = run_search_scraper_light(url)
-                if not quick_check.get('name'):
-                    return Response({
-                        'status': 'error',
-                        'message': 'No company information found at this URL.'
-                    }, status=status.HTTP_404_NOT_FOUND)
-                
-                # Create new company entry
                 company = Company.objects.create(
                     url=url,
-                    name=quick_check.get('name', 'Processing...'),
+                    name=f'Processing {url}...',
                     is_processed=False
                 )
-
-                # Start scraping task
-                scrape_company_task.delay(url)
+                
+                # Start scraping task with rate limiting queue
+                queue_scrape_company.delay(url)
 
                 return Response({
                     'status': 'processing',
-                    'message': 'Company found! Gathering detailed information...',
+                    'message': 'Company search initiated. Gathering information...',
                     'company': {
                         'slug': company.slug,
                         'url': company.url,
@@ -137,9 +128,10 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_202_ACCEPTED)
 
             except Exception as e:
+                print(f"Error creating company entry: {e}")
                 return Response({
                     'status': 'error',
-                    'message': 'Unable to access or validate the URL. Please check the URL and try again.'
+                    'message': 'Unable to process the URL. Please try again later.'
                 }, status=status.HTTP_400_BAD_REQUEST)
         
 class CommentViewSet(viewsets.ModelViewSet):

@@ -44,8 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
-    'api',
-    'scraper'
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -152,5 +151,24 @@ REST_FRAMEWORK = {
 }
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+
+# Celery Configuration
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+# Rate limiting configuration (seconds between scrape tasks)
+SCRAPE_RATE_LIMIT = int(env('SCRAPE_RATE_LIMIT', default=60))
+
+# Task queue processing
+CELERY_BEAT_SCHEDULE = {
+    'process-task-queue': {
+        'task': 'api.tasks.process_task_queue',
+        'schedule': 70.0,  # Check every 10 seconds
+    },
+}
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])

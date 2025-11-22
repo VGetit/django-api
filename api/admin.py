@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Address, Company, Comment, PhoneNumber, Contacts
+from .models import Address, Company, Comment, PhoneNumber, Contacts, TaskQueue
 
 
 @admin.register(Address)
@@ -91,3 +91,34 @@ class ContactsAdmin(admin.ModelAdmin):
             'fields': ('google_link', 'linkedin_link')
         }),
     )
+
+
+@admin.register(TaskQueue)
+class TaskQueueAdmin(admin.ModelAdmin):
+    list_display = ['url', 'status', 'retry_count', 'last_executed_at', 'created_at']
+    list_filter = ['status', 'created_at', 'last_executed_at']
+    search_fields = ['url', 'error_message']
+    readonly_fields = ['created_at', 'updated_at', 'last_executed_at']
+    plural_name = "Task Queue"
+    fieldsets = (
+        ('Task Information', {
+            'fields': ('url', 'status')
+        }),
+        ('Execution Details', {
+            'fields': ('last_executed_at', 'retry_count', 'error_message')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['retry_failed_tasks']
+    
+    def retry_failed_tasks(self, request, queryset):
+        """Action to retry failed tasks"""
+        failed_tasks = queryset.filter(status='failed')
+        updated_count = failed_tasks.update(status='pending', retry_count=0)
+        self.message_user(request, f'{updated_count} task(s) queued for retry.')
+    
+    retry_failed_tasks.short_description = "Retry selected failed tasks"

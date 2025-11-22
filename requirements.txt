@@ -10,3 +10,4 @@ phonenumbers
 drf-nested-routers
 requests
 redis
+playwright
