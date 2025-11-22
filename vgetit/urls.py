@@ -21,11 +21,14 @@ from rest_framework import routers, serializers, viewsets
 from rest_framework_nested import routers
 
 from api import views
+from api.serializers import CustomTokenObtainPairSerializer
 
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView as BaseTokenObtainPairView
+
+
+class CustomTokenObtainPairView(BaseTokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -40,9 +43,9 @@ urlpatterns = [
     path('', include(companies_router.urls)),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path("embed/company/<int:company_id>/", views.CompanyBadgeWidgetView.as_view(), name="company_badge"),
+    path("embed/company/<slug:company_slug>/", views.CompanyBadgeWidgetView.as_view(), name="company_badge"),
 
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', views.RegisterView.as_view(), name='auth_register'),
 ]

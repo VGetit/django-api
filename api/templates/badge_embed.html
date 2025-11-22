@@ -1,52 +1,180 @@
+{% load static %}
 <!DOCTYPE html>
-{% load star_tag %}
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    .badge-container {
-      border: 1px solid #ccc;
-      padding: 10px;
-      width: 220px;
-      background: #fff;
-    }
-    .stars {
-      font-size: 18px;
-      color: #f5a623;
-    }
-    .score {
-      font-size: 14px;
-      color: #333;
-    }
-    .link {
-      font-size: 12px;
-      margin-top: 5px;
-    }
-    .link a {
-      text-decoration: none;
-      color: #1e87f0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VGetit Company Badge</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: transparent;
+        }
+        
+        .badge-container {
+            overflow: hidden;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .company-badge {
+            background-image: linear-gradient(135deg, #1D2833 0%, #4a5e75 100%);
+            background-position: center center;
+            background-repeat: no-repeat;
+            border-radius: 10px;
+            padding: 16px 0px;
+            width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .company-badge:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            border-color: #e0e0e0;
+        }
+        
+        .badge-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        
+        .badge-logo {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .badge-logo img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
+        .badge-logo i {
+            margin-right: 6px;
+        }
+        
+        .company-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1D2833;
+            margin: 0 0 12px 0;
+            word-break: break-word;
+        }
+        
+        .score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .score-value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .score-label {
+            font-size: 11px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        
+        .score-max {
+            font-size: 14px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .badge-footer {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .score-green { color: #10b981; }
+        .score-orange { color: #f59e0b; }
+        .score-red { color: #ef4444; }
+        
+        .error-badge {
+            background: white;
+            border: 2px solid #fee2e2;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            color: #991b1b;
+        }
+        
+        .error-badge h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+        
+        .error-badge p {
+            margin: 0;
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body>
-  <div class="badge-container">
-    <div class="stars">
-
-{% for _ in company.score|times %}
-  ★
-{% endfor %}
-{% for _ in 5|subtract:company.score|times %}
-  ☆
-{% endfor %}
+    <div class="badge-container">
+        {% if status == 'success' and company %}
+            <a href="http://localhost:5173/company/{{ company.slug }}" target="_blank" style="text-decoration: none;">
+                <div class="company-badge">
+                    <div class="badge-header">
+                        <div class="badge-logo">
+                            <img src="{% static 'images/VLogoAlt.png' %}" alt="VGetit Logo" />
+                            Getit
+                        </div>
+                    </div>
+                    <div class="score-display">
+                        <div>
+                            <div class="score-value score-color" id="scoreValue">{{ company.score|floatformat:1 }}</div>
+                            <div class="score-label">Trust Score</div>
+                        </div>
+                        <div class="score-max">/5.0</div>
+                    </div>
+                </div>
+            </a>
+        {% else %}
+            <div class="error-badge">
+                <h3>Badge Not Found</h3>
+                <p>{{ message|default:'The company badge could not be found.' }}</p>
+            </div>
+        {% endif %}
     </div>
-    <div class="score">{{ company.score }}/5 · {{ company.review_count }} değerlendirme</div>
-    <div class="link">
-      <a href="https://yourdomain.com/company/{{ company.id }}">Şirket sayfası →</a>
-    </div>
-  </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scoreValue = parseFloat(document.getElementById('scoreValue')?.textContent || 0);
+            const scoreElement = document.getElementById('scoreValue');
+            
+            if (scoreElement) {
+                if (scoreValue >= 4) {
+                    scoreElement.classList.add('score-green');
+                } else if (scoreValue >= 2.5) {
+                    scoreElement.classList.add('score-orange');
+                } else {
+                    scoreElement.classList.add('score-red');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

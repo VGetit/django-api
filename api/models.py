@@ -20,7 +20,7 @@ class Company(models.Model):
     slug = models.SlugField(max_length=100, unique=True, db_index=True)
     url = models.CharField(max_length=100, unique=True)
     is_processed = models.BooleanField(default=False)
-    social_urls = models.TextField()
+    social_urls = models.TextField(blank=True, null=True)
     score = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -79,6 +79,7 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        unique_together = ('company', 'user')
 
     def __str__(self):
         return f'{self.user.username} - {self.company.name} ({self.rating} stars)'

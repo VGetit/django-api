@@ -149,6 +149,25 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         company = Company.objects.get(slug=self.kwargs['company_slug'])
+        # Check if user already has a comment for this company
+        existing_comment = Comment.objects.filter(
+            user=self.request.user, 
+            company=company
+        ).first()
+        
+        if existing_comment:
+            # Update existing comment
+            serializer.instance = existing_comment
+            serializer.save(user=self.request.user, company=company)
+        else:
+            # Create new comment
+            serializer.save(user=self.request.user, company=company)
+
+    def perform_update(self, serializer):
+        company = Company.objects.get(slug=self.kwargs['company_slug'])
+        # Only allow users to update their own comments
+        if serializer.instance.user != self.request.user:
+            raise permissions.PermissionDenied("You can only edit your own comments")
         serializer.save(user=self.request.user, company=company)
 
     def get_queryset(self):
@@ -159,6 +178,13 @@ class CompanyBadgeWidgetView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        company = get_object_or_404(Company, id=kwargs['company_id'])
-        context['company'] = company
+        company_slug = kwargs.get('company_slug')
+        try:
+            print("Fetching company with slug:", company_slug)
+            company = get_object_or_404(Company, slug=company_slug)
+            context['company'] = company
+            context['status'] = 'success'
+        except:
+            context['status'] = 'error'
+            context['message'] = 'Company not found'
         return context
