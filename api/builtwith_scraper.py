@@ -2,7 +2,6 @@ import time
 from selectolax.parser import HTMLParser, Node
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
-from playwright_scraper import parse_html_content
 from api.captcha_solver import CaptchaAI
 from pyvirtualdisplay import Display
 import os

@@ -38,7 +38,7 @@ router.register(r'companies', views.CompanyViewSet, basename='company')
 companies_router = routers.NestedSimpleRouter(router, r'companies', lookup='company')
 companies_router.register(r'comments', views.CommentViewSet, basename='company-comments')
 
-urlpatterns = [
+api_urlpatterns = [
     path('', include(router.urls)),
     path('', include(companies_router.urls)),
     path('admin/', admin.site.urls),
@@ -48,4 +48,8 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', views.RegisterView.as_view(), name='auth_register'),
+]
+
+urlpatterns = [
+    path('api/', include(api_urlpatterns)),
 ]
