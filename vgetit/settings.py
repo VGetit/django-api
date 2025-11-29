@@ -29,7 +29,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['vgetit.com', 'www.vgetit.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -127,8 +127,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/django_static/'
+STATIC_ROOT = '/home/vgetit.com/public_html/django_static'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'api', 'static'),
 ]
@@ -172,3 +172,12 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
+CORS_ALLOWED_ORIGINS = [
+    "https://vgetit.com",
+    "https://www.vgetit.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://vgetit.com",
+    "https://www.vgetit.com",
+]
