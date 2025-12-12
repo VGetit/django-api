@@ -5,6 +5,7 @@ from django.conf import settings
 from datetime import timedelta
 from api.models import Company, PhoneNumber, Address, Contacts, TaskQueue
 from api.builtwith_scraper import scrape_company_data
+from api.utils import verify_address_osm, get_whois_details, get_phone_number_type_description
 import phonenumbers
 
 # Get rate limit from settings
@@ -107,8 +108,13 @@ def scrape_company_task(url):
             task_queue.save()
             return
         
-        # Create address
-        addr = Address.objects.create(address=result.get('address', ''), verified=True)
+        # Fetch WHOIS details
+        whois_data = get_whois_details(url)
+
+        # Create address with OSM verification
+        address_str = result.get('address', '')
+        is_address_verified = verify_address_osm(address_str)
+        addr = Address.objects.create(address=address_str, verified=is_address_verified)
         
         # Get or create company
         company, created = Company.objects.get_or_create(url=url, defaults={
@@ -116,6 +122,9 @@ def scrape_company_task(url):
             'address': addr,
             'is_processed': True,
             'social_urls': result.get('socials', ''),
+            'registration_date': whois_data.get('registration_date'),
+            'legal_status': whois_data.get('legal_status'),
+            'origin_country': whois_data.get('origin_country'),
         })
 
         # If company already existed, update it
@@ -124,6 +133,9 @@ def scrape_company_task(url):
             company.social_urls = result.get('socials', '')
             company.is_processed = True
             company.address = addr
+            company.registration_date = whois_data.get('registration_date')
+            company.legal_status = whois_data.get('legal_status')
+            company.origin_country = whois_data.get('origin_country')
             company.save()
 
         # Verify and create phone numbers
@@ -137,6 +149,8 @@ def scrape_company_task(url):
                 parsed = phonenumbers.parse(phone_number)
                 if phonenumbers.is_valid_number(parsed):
                     is_verified = True
+                    num_type = phonenumbers.number_type(parsed)
+                    description = get_phone_number_type_description(num_type)
             except phonenumbers.NumberParseException:
                 is_verified = False
             
@@ -181,10 +195,32 @@ def scrape_company_task(url):
         # Delete the company entry if scraping failed
         try:
             Company.objects.filter(url=url).delete()
-        except Exception:
-            pass
-        
+        except Exception as del_e:
+            print(f"Error deleting company entry for URL {url} after failure: {del_e}")
         # Process next task in queue
         process_task_queue.delay()
+
+
+@shared_task
+def verify_address_task(address_id):
+    """
+    Task to verify an address using OSM.
+    """
+    try:
+        address_obj = Address.objects.get(id=address_id)
+        is_verified = verify_address_osm(address_obj.address)
+        
+        # Only update if status changed to avoid loops (though post_save check handles this too)
+        if address_obj.verified != is_verified:
+            address_obj.verified = is_verified
+            # Save only verified field to avoid re-triggering unnecessary logic, 
+            # though our signal handler should be robust enough.
+            address_obj.save(update_fields=['verified'])
+            
+        print(f"Address {address_id} verification complete. Status: {is_verified}")
+    except Address.DoesNotExist:
+        print(f"Address {address_id} not found during verification task.")
+    except Exception as e:
+        print(f"Error verifying address {address_id}: {e}")
 
 

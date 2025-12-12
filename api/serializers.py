@@ -29,6 +29,8 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
+        user.is_active = False  # Requires admin verification
+        user.save()
         return user
 
 
@@ -78,6 +80,10 @@ class CompanySerializer(serializers.ModelSerializer):
             'about',
             'is_processed',
             'url',
+            'parent_company',
+            'registration_date',
+            'legal_status',
+            'origin_country',
             'score',
             'address',
             'contacts',

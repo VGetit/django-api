@@ -5,7 +5,17 @@ from playwright_stealth import Stealth
 from api.captcha_solver import CaptchaAI
 from pyvirtualdisplay import Display
 import os
-os.environ['PYVIRTUALDISPLAY_DISPLAYFD'] = '0'
+
+PROJECT_DIR = "/home/vgetit-django/django-api"
+USER_DATA_DIR = os.path.join(PROJECT_DIR, "user_data")
+
+os.environ["HOME"] = PROJECT_DIR
+
+os.environ["DBUS_SESSION_BUS_ADDRESS"] = "/dev/null"
+
+os.environ["XDG_RUNTIME_DIR"] = "/tmp/django_runtime"
+os.environ["XDG_CONFIG_HOME"] = USER_DATA_DIR
+os.environ["XDG_CACHE_HOME"] = os.path.join(PROJECT_DIR, ".cache")
 
 def safe_get_text(node: Node, seperator=''):
     return node.text(strip=True, separator=seperator) if node else ''
@@ -103,9 +113,15 @@ def scrape_company_data(target_url: str):
                 user_data_dir="./user_data",
                 headless=False,
                 args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-infobars"
+                    '--disable-blink-features=AutomationControlled',
+         		    '--disable-infobars',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-gpu', # Serverda ekran kartı yok, bunu kapatmak şart
+                    '--disable-dev-shm-usage',
+                    '--no-first-run',
+                    '--disable-breakpad',       # Raporlamayı kapat
+                    '--disable-crash-reporter',
                 ],
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )
@@ -172,7 +188,7 @@ def scrape_company_data(target_url: str):
 
             browser.close()
 
-            result = parse_html_content(html_content, 'test')
+            result = parse_html_content(html_content)
             return result
 
 

@@ -38,7 +38,7 @@ router.register(r'companies', views.CompanyViewSet, basename='company')
 companies_router = routers.NestedSimpleRouter(router, r'companies', lookup='company')
 companies_router.register(r'comments', views.CommentViewSet, basename='company-comments')
 
-api_urlpatterns = [
+api_patterns = [
     path('', include(router.urls)),
     path('', include(companies_router.urls)),
     path('admin/', admin.site.urls),
@@ -51,5 +51,5 @@ api_urlpatterns = [
 ]
 
 urlpatterns = [
-    path('api/', include(api_urlpatterns)),
+    path('api/', include(api_patterns)),
 ]

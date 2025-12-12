@@ -16,3 +16,5 @@ pyvirtualdisplay
 transformers
 torch
 Pillow
+django-environ
+python-whois

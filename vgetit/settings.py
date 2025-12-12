@@ -18,6 +18,12 @@ env = environ.Env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+CUSTOM_CACHE_DIR = os.path.join('/home/vgetit-django/django-api/hf_cache') 
+
+os.environ['HF_HOME'] = str(CUSTOM_CACHE_DIR)
+os.environ['TRANSFORMERS_CACHE'] = str(CUSTOM_CACHE_DIR)
+os.environ['TORCH_HOME'] = str(CUSTOM_CACHE_DIR)
+os.environ['XDG_CACHE_HOME'] = str(CUSTOM_CACHE_DIR)
 
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
@@ -49,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -129,9 +136,7 @@ USE_TZ = True
 
 STATIC_URL = '/django_static/'
 STATIC_ROOT = '/home/vgetit.com/public_html/django_static'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'api', 'static'),
-]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -172,12 +177,5 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
-CORS_ALLOWED_ORIGINS = [
-    "https://vgetit.com",
-    "https://www.vgetit.com",
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://vgetit.com",
-    "https://www.vgetit.com",
-]
+ALLOWED_HOSTS = ['vgetit.com', 'www.vgetit.com', '127.0.0.1', 'localhost']
+CSRF_TRUSTED_ORIGINS = ['https://vgetit.com', 'https://www.vgetit.com', 'http://127.0.0.1:5173', 'http://localhost:5173']

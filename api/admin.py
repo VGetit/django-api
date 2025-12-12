@@ -1,6 +1,14 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
 from .models import Address, Company, Comment, PhoneNumber, Contacts, TaskQueue
 
+admin.site.unregister(User)
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    list_display = UserAdmin.list_display + ('is_active',)
+    list_filter = UserAdmin.list_filter + ('is_active',)
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
@@ -12,14 +20,17 @@ class AddressAdmin(admin.ModelAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ['name', 'url', 'slug', 'is_processed', 'score', 'created_at']
-    list_filter = ['is_processed', 'created_at', 'last_updated']
-    search_fields = ['name', 'url', 'slug']
+    list_display = ['name', 'url', 'origin_country', 'parent_company', 'is_processed', 'score', 'created_at']
+    list_filter = ['is_processed', 'origin_country', 'created_at', 'last_updated']
+    search_fields = ['name', 'url', 'slug', 'origin_country']
     readonly_fields = ['slug', 'created_at', 'last_updated', 'score']
     plural_name = "Companies"
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'url', 'slug', 'about')
+            'fields': ('name', 'url', 'slug', 'about', 'parent_company')
+        }),
+        ('Legal & Registration', {
+            'fields': ('registration_date', 'legal_status', 'origin_country')
         }),
         ('Address & Location', {
             'fields': ('address',)

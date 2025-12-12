@@ -3,6 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from api.models import Company, Address, PhoneNumber, Contacts
+from api.utils import get_phone_number_type_description
 import phonenumbers
 
 class Command(BaseCommand):
@@ -91,6 +92,8 @@ class Command(BaseCommand):
                                         parsed = phonenumbers.parse(phone_number, "US")
                                         if phonenumbers.is_valid_number(parsed):
                                             is_verified = True
+                                            num_type = phonenumbers.number_type(parsed)
+                                            description = get_phone_number_type_description(num_type)
                                     except phonenumbers.NumberParseException:
                                         is_verified = False
                                     
