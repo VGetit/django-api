@@ -153,6 +153,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication', 
     ],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    )
 }
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
@@ -179,3 +182,8 @@ CELERY_BEAT_SCHEDULE = {
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 ALLOWED_HOSTS = ['vgetit.com', 'www.vgetit.com', '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['https://vgetit.com', 'https://www.vgetit.com', 'http://127.0.0.1:5173', 'http://localhost:5173']
+
+if DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append(
+        'rest_framework.renderers.BrowsableAPIRenderer'
+    )
