@@ -9,23 +9,23 @@ from api.utils import custom_slugify, get_phone_number_type_description, get_who
 import phonenumbers
 
 class Address(models.Model):
-    address = models.TextField(blank=True, null=True)
-    verified = models.BooleanField(default=False)
+    address = models.TextField(blank=True, null=True, help_text="Complete physical address. Verified automatically via OpenStreetMap on save.")
+    verified = models.BooleanField(default=False, help_text="Indicates if the address is verified. This is updated automatically.")
 
 class Company(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, blank=False)
-    about = models.CharField(blank=True)
-    address = models.OneToOneField(Address, on_delete=models.CASCADE, blank=True, null=True)
-    slug = models.SlugField(max_length=100, unique=True, db_index=True)
-    url = models.CharField(max_length=100, unique=True)
-    parent_company = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='branches')
-    registration_date = models.DateField(null=True, blank=True)
-    legal_status = models.CharField(max_length=255, blank=True, null=True)
-    origin_country = models.CharField(max_length=100, blank=True, null=True)
-    is_processed = models.BooleanField(default=False)
-    social_urls = models.TextField(blank=True, null=True, help_text="Enter one URL per line.")
-    score = models.FloatField(default=0)
+    name = models.CharField(max_length=255, blank=False, help_text="Full legal name of the company.")
+    about = models.CharField(blank=True, help_text="A brief description of the company.")
+    address = models.OneToOneField(Address, on_delete=models.CASCADE, blank=True, null=True, help_text="Link to the physical address. Use the '+' icon to create a new address.")
+    slug = models.SlugField(max_length=100, unique=True, db_index=True, help_text="URL-friendly identifier. Automatically generated from the Website URL.")
+    url = models.CharField(max_length=100, unique=True, help_text="Official website URL (e.g., example.com). Triggers auto-population on save.")
+    parent_company = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='branches', help_text="Select the main company if this is a branch.")
+    registration_date = models.DateField(null=True, blank=True, help_text="Founding or registration date. Auto-populated from WHOIS if blank.")
+    legal_status = models.CharField(max_length=255, blank=True, null=True, help_text="Legal entity type (e.g., LLC). Auto-populated from WHOIS if blank.")
+    origin_country = models.CharField(max_length=100, blank=True, null=True, help_text="Headquarters country. Auto-populated from WHOIS if blank.")
+    is_processed = models.BooleanField(default=False, help_text="Indicates if the company has been processed by the scraper. Updated automatically. Check this if manually creating a company.")
+    social_urls = models.TextField(blank=True, null=True, help_text="Social media profiles. Enter one URL per line.")
+    score = models.FloatField(default=0, help_text="Trust score (0.0 to 5.0). Automatically calculated based on verifications and reviews.")
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -109,17 +109,17 @@ class Comment(models.Model):
 
 class PhoneNumber(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='phone_numbers')
-    number = models.CharField(max_length=50)
-    verified = models.BooleanField(default=False)
-    description = models.CharField(max_length=100, blank=True, null=True)
+    number = models.CharField(max_length=50, help_text="Phone number in international format.")
+    verified = models.BooleanField(default=False, help_text="Indicates if the number is verified. Updated automatically on save.")
+    description = models.CharField(max_length=100, blank=True, null=True, help_text="Type of number (e.g., Mobile). Detected automatically on save.")
 
 class Contacts(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='contacts')
-    name = models.CharField(max_length=255)
-    verified_profile = models.BooleanField(default=False)
-    level = models.CharField(max_length=100)
-    google_link = models.CharField(max_length=255)
-    linkedin_link = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, help_text="Full name of the contact person.")
+    verified_profile = models.BooleanField(default=False, help_text="Whether the profile has been verified.")
+    level = models.CharField(max_length=100, help_text="Job title or seniority level.")
+    google_link = models.CharField(max_length=255, help_text="Link to Google Search results or profile.")
+    linkedin_link = models.CharField(max_length=255, help_text="Link to LinkedIn profile.")
 
 class TaskQueue(models.Model):
     """
