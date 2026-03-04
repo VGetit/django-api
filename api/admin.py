@@ -18,12 +18,23 @@ class AddressAdmin(admin.ModelAdmin):
     plural_name = "Addresses"
 
 
+class PhoneNumberInline(admin.TabularInline):
+    model = PhoneNumber
+    extra = 1
+    fields = ['number', 'verified', 'description']
+
+class ContactsInline(admin.TabularInline):
+    model = Contacts
+    extra = 1
+    fields = ['name', 'level', 'verified_profile', 'google_link', 'linkedin_link']
+
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ['name', 'url', 'origin_country', 'parent_company', 'is_processed', 'score', 'created_at']
     list_filter = ['is_processed', 'origin_country', 'created_at', 'last_updated']
     search_fields = ['name', 'url', 'slug', 'origin_country']
     readonly_fields = ['slug', 'created_at', 'last_updated', 'score']
+    inlines = [PhoneNumberInline, ContactsInline]
     plural_name = "Companies"
     fieldsets = (
         ('Basic Information', {
