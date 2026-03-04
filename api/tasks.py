@@ -117,11 +117,14 @@ def scrape_company_task(url):
         addr = Address.objects.create(address=address_str, verified=is_address_verified)
         
         # Get or create company
+        socials_list = result.get('socials', [])
+        socials_str = '\n'.join(socials_list) if isinstance(socials_list, list) else socials_list
+
         company, created = Company.objects.get_or_create(url=url, defaults={
             'name': result.get('name', ''),
             'address': addr,
             'is_processed': True,
-            'social_urls': result.get('socials', ''),
+            'social_urls': socials_str,
             'registration_date': whois_data.get('registration_date'),
             'legal_status': whois_data.get('legal_status'),
             'origin_country': whois_data.get('origin_country'),
@@ -130,7 +133,7 @@ def scrape_company_task(url):
         # If company already existed, update it
         if not created:
             company.name = result.get('name', '')
-            company.social_urls = result.get('socials', '')
+            company.social_urls = socials_str
             company.is_processed = True
             company.address = addr
             company.registration_date = whois_data.get('registration_date')

@@ -24,7 +24,7 @@ class Company(models.Model):
     legal_status = models.CharField(max_length=255, blank=True, null=True)
     origin_country = models.CharField(max_length=100, blank=True, null=True)
     is_processed = models.BooleanField(default=False)
-    social_urls = models.TextField(blank=True, null=True)
+    social_urls = models.TextField(blank=True, null=True, help_text="Enter one URL per line.")
     score = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
